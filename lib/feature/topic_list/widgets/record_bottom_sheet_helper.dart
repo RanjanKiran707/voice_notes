@@ -24,7 +24,7 @@ class RecordBottomSheet {
 
   static buildRecordPage(BuildContext context) {
     return WoltModalSheetPage(
-      pageTitle: Text("Begin recording !"),
+      topBarTitle: Text("Begin recording !"),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Center(
