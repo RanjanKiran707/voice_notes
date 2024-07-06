@@ -24,9 +24,9 @@ class RecordBottomSheet {
 
   static buildRecordPage(BuildContext context) {
     return WoltModalSheetPage(
-      topBarTitle: Text("Begin recording !"),
+      hasTopBarLayer: false,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
         child: Center(
           child: FilledButton.tonalIcon(
             onPressed: () {
@@ -43,8 +43,11 @@ class RecordBottomSheet {
 
   static buildTimerPage(BuildContext context) {
     return WoltModalSheetPage(
-      topBarTitle: Text("Recording..."),
-      child: RecordBottomSheetWidget(),
+      hasTopBarLayer: false,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: RecordBottomSheetWidget(),
+      ),
     );
   }
 }
