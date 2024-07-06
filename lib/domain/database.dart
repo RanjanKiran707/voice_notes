@@ -1,4 +1,4 @@
-import 'package:realm/realm.dart';  // import realm package
+import 'package:realm/realm.dart'; // import realm package
 
 part 'database.realm.dart'; // declare a part file.
 
@@ -10,8 +10,10 @@ class _Subject {
   late String name;
   late List<_Chapter> chapters;
 
+  @Indexed()
+  @MapTo("owner_id")
+  late String ownerId;
 }
-
 
 @RealmModel(ObjectType.embeddedObject)
 class _Chapter {
@@ -23,7 +25,7 @@ class _Chapter {
 }
 
 @RealmModel(ObjectType.embeddedObject)
-class _Topic{
+class _Topic {
   @MapTo("_id")
   late ObjectId id;
   late String name;
@@ -31,11 +33,18 @@ class _Topic{
   late String remoteUrl;
 }
 
-
-class _SyncTable{
+@RealmModel()
+class _SyncTable {
   @MapTo("_id")
   late ObjectId id;
   late String topicName;
   late DateTime uploadedAt;
   late String syncedBy;
+}
+
+@RealmModel()
+class _LocalVoiceNote {
+  late ObjectId id;
+  late ObjectId topicId;
+  late String voiceLocalPath;
 }

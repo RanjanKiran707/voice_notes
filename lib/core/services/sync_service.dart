@@ -8,15 +8,16 @@ import 'package:voice_notes/domain/database.dart';
 import 'package:path/path.dart' as path;
 
 class SyncService {
-  final Realm realm;
+  final Realm atlasRealm;
+  // final Realm localRealm;
 
-  SyncService({required this.realm});
+  SyncService({required this.atlasRealm});
 
   /// This will sync all pending topics
-  Future<void> syncPendingTopics() async {
+  Future<void> uploadPendingTopics() async {
     final pendings = <Topic>[];
 
-    final subjects = realm.query<Subject>("chapters.\$size > 0");
+    final subjects = atlasRealm.query<Subject>("chapters.@count > 0");
 
     for (var subject in subjects) {
       for (final chapter in subject.chapters) {
@@ -37,6 +38,33 @@ class SyncService {
     await Future.wait(uploads);
   }
 
+  // Future<void> downloadPending() async {
+  //   final pendings = <Topic>[];
+
+  //   final subjects = atlasRealm.query<Subject>("chapters.@count > 0");
+
+  //   for (var subject in subjects) {
+  //     for (final chapter in subject.chapters) {
+  //       for (final topic in chapter.topics) {
+  //         final topicID = topic.id;
+  //         final results =
+  //             // localRealm.query<LocalVoiceNote>("topicId == \$0", [topicID]);
+  //         if (results.isEmpty) {
+  //           pendings.add(topic);
+  //         }
+  //       }
+  //     }
+  //   }
+  //   LogService.instance
+  //       .i("Length of pending recordings to be synced is ${pendings.length}");
+
+  //   List<Future> downloads = [];
+  //   for (final pending in pendings) {
+  //     downloads.add(_downloadToStorage(pending));
+  //   }
+  //   await Future.wait(downloads);
+  // }
+
   Future<void> _uploadToStorage(Topic pending) async {
     if (pending.voiceLocalPath?.isEmpty ?? true) {
       return;
@@ -52,7 +80,7 @@ class SyncService {
       // Get the download URL
       String downloadUrl = await taskSnapshot.ref.getDownloadURL();
 
-      realm.write(() {
+      atlasRealm.write(() {
         pending.remoteUrl = downloadUrl;
       });
       LogService.instance.i("Succesfully upload recording for ${pending.name}");
@@ -60,5 +88,12 @@ class SyncService {
       LogService.instance
           .i("Error in upload recording for ${pending.name} = ${e}");
     }
+  }
+
+  Future<void> _downloadToStorage(Topic pending) async {
+    if (pending.remoteUrl.isEmpty) {
+      return;
+    }
+    Reference ref = FirebaseStorage.instance.refFromURL(pending.remoteUrl);
   }
 }

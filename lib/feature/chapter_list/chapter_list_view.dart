@@ -5,22 +5,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
 import 'package:realm/realm.dart';
 import 'package:voice_notes/core/nav_utils.dart';
+import 'package:voice_notes/core/utils/constants.dart';
 import 'package:voice_notes/core/widgets/add_dialog.dart';
+import 'package:voice_notes/core/widgets/common_app_bar.dart';
 import 'package:voice_notes/domain/database.dart';
 import 'package:voice_notes/feature/chapter_list/notifiers/chapter_list_notifier.dart';
 import 'package:voice_notes/feature/subject_list/notifiers/subjects_notifier.dart';
 import 'package:voice_notes/feature/topic_list/topic_list_view.dart';
 
-class ChapterListView extends ConsumerWidget{
+class ChapterListView extends ConsumerWidget {
   ChapterListView({super.key, required this.subject});
   final Subject subject;
-  final realm = GetIt.I.get<Realm>();
+  final realm = GetIt.I.get<Realm>(instanceName: AppConstants.local);
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      appBar: CommonAppBar(
+        title: subject.name,
+        onAddPress: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AddDialog(
+                hintText: "Enter chapter name",
+                onSubmit: ({required name}) {
+                  final realm = GetIt.I.get<Realm>(
+                    instanceName: AppConstants.local,
+                  );
+                  realm.write(() {
+                    subject.chapters.add(Chapter(ObjectId(), name));
+                  });
+                },
+              );
+            },
+          );
+        },
+      ),
       body: Consumer(
         builder: (context, ref, child) {
-          
           final chapterValue = ref.watch(chapterListNotifierProvider(subject));
           return chapterValue.when(
             data: (data) {
@@ -29,8 +51,8 @@ class ChapterListView extends ConsumerWidget{
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text(chapterList[index].name),
-                    onTap: (){
-                       NavUtils.push(
+                    onTap: () {
+                      NavUtils.push(
                         context,
                         TopicListView(
                           chapter: chapterList[index],
@@ -53,29 +75,6 @@ class ChapterListView extends ConsumerWidget{
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-           showDialog(
-            context: context,
-            builder: (context) {
-              return AddDialog(
-                hintText: "Enter chapter name",
-                onSubmit: ({required name}) {
-                  final realm = GetIt.I.get<Realm>();
-                  realm.write(() {
-                    subject.chapters.add(
-                        Chapter(ObjectId(), name));
-                  });
-                },
-              );
-            },
-          );
-        },
-        label: Text("Add chapter"),
-        icon: Icon(Icons.add),
-      ),
     );
   }
 }
-
-

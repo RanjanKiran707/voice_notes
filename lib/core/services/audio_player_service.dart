@@ -26,8 +26,21 @@ class AudioPlayerService {
     audioPlayer.stop();
   }
 
+  void resume() {
+    audioPlayer.play();
+  }
+
   void seekTo(Duration position) {
     audioPlayer.seek(position);
+  }
+
+  void seekToMiliSec(double milSecs) {
+    audioPlayer.seek(Duration(milliseconds: milSecs.toInt()));
+  }
+
+  void replay() {
+    audioPlayer.seek(Duration.zero);
+    // audioPlayer.play();
   }
 
   Stream<PlayerState> get playstateStream => audioPlayer.playerStateStream;

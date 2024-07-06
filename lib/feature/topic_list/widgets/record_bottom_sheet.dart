@@ -5,18 +5,20 @@ import 'package:riverpod/riverpod.dart';
 import 'package:voice_notes/core/services/audio_recorder_service.dart';
 import 'package:voice_notes/feature/topic_list/widgets/record_bottom_sheet_helper.dart';
 
-
-final timerStreamProvider = StreamProvider.family<int, AudioRecorderService>((ref, args)  {
+final timerStreamProvider =
+    StreamProvider.family<int, AudioRecorderService>((ref, args) {
   return args.timerSteam;
 });
 
 class RecordBottomSheetWidget extends ConsumerWidget {
-   RecordBottomSheetWidget({super.key});
+  RecordBottomSheetWidget({super.key});
 
   final recordService = GetIt.I.get<AudioRecorderService>();
 
+  bool isPaused = false;
+
   @override
-  Widget build(BuildContext context,ref) {
+  Widget build(BuildContext context, ref) {
     final timer = ref.watch(timerStreamProvider(recordService));
     return Center(
       child: Column(
@@ -45,13 +47,32 @@ class RecordBottomSheetWidget extends ConsumerWidget {
           const SizedBox(
             height: 20,
           ),
-          FilledButton.icon(
-            onPressed: () {
-              final result = recordService.stopRecording();
-              Navigator.pop(context,result);
-              RecordBottomSheet.indexNotifier.value = 0;
-            },
-            label: const Text("Stop recording"),
+          Column(
+            children: [
+              StatefulBuilder(builder: (context, stateSet) {
+                return FilledButton.icon(
+                  onPressed: () {
+                    if (!isPaused) {
+                      recordService.pauseRecording();
+                    } else {
+                      recordService.resumeRecording();
+                    }
+                    isPaused = !isPaused;
+                    stateSet(() {});
+                  },
+                  icon: isPaused ? Icon(Icons.play_arrow) : Icon(Icons.pause),
+                  label: isPaused ? Text("Resume") : Text("Pause"),
+                );
+              }),
+              FilledButton.icon(
+                onPressed: () {
+                  final result = recordService.stopRecording();
+                  Navigator.pop(context, result);
+                  RecordBottomSheet.indexNotifier.value = 0;
+                },
+                label: const Text("Stop recording"),
+              ),
+            ],
           ),
         ],
       ),

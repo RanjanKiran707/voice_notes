@@ -18,6 +18,7 @@ class AudioRecorderService {
   }
 
   void startRecording() {
+    /// Add one permission check here otherwise only timer will start whereas actual recording is yet to start
     _recorder.start(const RecordConfig(androidConfig: AndroidRecordConfig()),
         path: "$path${AppConstants.defaultPath}");
     _timerService.startTimer();
@@ -29,6 +30,16 @@ class AudioRecorderService {
       duration: _timerService.stopTimer(),
       path: "$path${AppConstants.defaultPath}"
     );
+  }
+
+  void pauseRecording() async {
+    _recorder.pause();
+    _timerService.pauseTimer();
+  }
+
+  void resumeRecording() async {
+    _recorder.resume();
+    _timerService.resumeTimer();
   }
 
   void dispose() {
@@ -56,5 +67,16 @@ class AudioRecordDurationService {
     final oldDuration = _recordDuration;
     _recordDuration = 0;
     return oldDuration;
+  }
+
+  void pauseTimer() {
+    timer?.cancel();
+  }
+
+  void resumeTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _recordDuration += 1;
+      timerStream.add(_recordDuration);
+    });
   }
 }
