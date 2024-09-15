@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
@@ -9,6 +8,7 @@ import 'package:miniplayer/miniplayer.dart';
 import 'package:voice_notes/core/extension_utils.dart';
 import 'package:voice_notes/core/services/audio_player_service.dart';
 import 'package:voice_notes/core/services/dependency_service.dart';
+import 'package:voice_notes/domain/database.dart';
 import 'package:voice_notes/feature/mini_player_wrapper/notifiers.dart';
 import 'package:voice_notes/feature/subject_list/subject_list_view.dart';
 
@@ -34,7 +34,7 @@ class MiniPlayerWrapper extends StatelessWidget {
               key: _navigatorKey,
               onGenerateRoute: (RouteSettings settings) => MaterialPageRoute(
                 settings: settings,
-                builder: (BuildContext context) => SubjectListView(),
+                builder: (BuildContext context) => const SubjectListView(),
               ),
             ),
             Consumer(
@@ -59,68 +59,168 @@ class MiniPlayerWrapper extends StatelessWidget {
                                       data.$1.inMilliseconds.toDouble());
                                   final total = data.$1.inMilliseconds;
 
-                                  return Container(
-                                    padding: EdgeInsets.all(12),
-                                    color: Colors.blueAccent,
-                                    child: Row(
-                                      children: [
-                                        StreamBuilder(
-                                          stream: Dep.player.playstateStream,
-                                          builder: (context, snapshot) {
-                                            final data = snapshot.data ??
-                                                PlayerState(false,
-                                                    ProcessingState.idle);
-                                            if (data.processingState ==
-                                                ProcessingState.completed) {
+                                  if (percentage <= 0.25) {
+                                    return Container(
+                                      padding: const EdgeInsets.all(12),
+                                      color: Colors.blueAccent,
+                                      child: Row(
+                                        children: [
+                                          StreamBuilder(
+                                            stream: Dep.player.playstateStream,
+                                            builder: (context, snapshot) {
+                                              final data = snapshot.data ??
+                                                  PlayerState(false,
+                                                      ProcessingState.idle);
+                                              if (data.processingState ==
+                                                  ProcessingState.completed) {
+                                                return IconButton(
+                                                  icon:
+                                                      const Icon(Icons.replay),
+                                                  color: Colors.white,
+                                                  onPressed: () {
+                                                    Dep.player.replay();
+                                                  },
+                                                );
+                                              }
                                               return IconButton(
-                                                icon: Icon(Icons.replay),
+                                                icon: Icon(data.playing
+                                                    ? Icons.pause
+                                                    : Icons.play_arrow),
                                                 color: Colors.white,
                                                 onPressed: () {
-                                                  Dep.player.replay();
+                                                  if (data.playing) {
+                                                    Dep.player.pause();
+                                                  } else {
+                                                    Dep.player.resume();
+                                                  }
                                                 },
                                               );
-                                            }
-                                            return IconButton(
-                                              icon: Icon(data.playing
-                                                  ? Icons.pause
-                                                  : Icons.play_arrow),
-                                              color: Colors.white,
-                                              onPressed: () {
-                                                if (data.playing) {
-                                                  Dep.player.pause();
-                                                } else {
-                                                  Dep.player.resume();
-                                                }
-                                              },
-                                            );
-                                          },
-                                        ),
-                                        Expanded(
-                                          child: Slider(
-                                            value: position.toDouble(),
-                                            min: 0,
-                                            max: total.toDouble(),
-                                            activeColor: Colors.red,
-                                            inactiveColor: Colors.white,
-                                            onChanged: (value) {
-                                              Dep.player.seekToMiliSec(value);
                                             },
                                           ),
-                                        ),
-                                        Text(
-                                          "${data.$2.format}",
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        SizedBox(width: 10),
-                                        IconButton(
-                                          icon: Icon(Icons.close),
-                                          color: Colors.white,
-                                          onPressed: () {
-                                            final service = GetIt.I
-                                                .get<AudioPlayerService>();
+                                          Expanded(
+                                            child: Slider(
+                                              value: position.toDouble(),
+                                              min: 0,
+                                              max: total.toDouble(),
+                                              activeColor: Colors.red,
+                                              inactiveColor: Colors.white,
+                                              onChanged: (value) {
+                                                Dep.player.seekToMiliSec(value);
+                                              },
+                                            ),
+                                          ),
+                                          Text(
+                                            data.$2.format,
+                                            style: const TextStyle(
+                                                color: Colors.white),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          IconButton(
+                                            icon: const Icon(Icons.close),
+                                            color: Colors.white,
+                                            onPressed: () {
+                                              final service = GetIt.I
+                                                  .get<AudioPlayerService>();
 
-                                            service.stop();
-                                          },
+                                              service.stop();
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return Container(
+                                    padding: const EdgeInsets.all(12),
+                                    color: Colors.blueAccent,
+                                    child: Column(
+                                      children: [
+                                        _buildTitle(),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Slider(
+                                                value: position.toDouble(),
+                                                min: 0,
+                                                max: total.toDouble(),
+                                                activeColor: Colors.red,
+                                                inactiveColor: Colors.white,
+                                                onChanged: (value) {
+                                                  Dep.player
+                                                      .seekToMiliSec(value);
+                                                },
+                                              ),
+                                            ),
+                                            Text(
+                                              data.$2.format,
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            IconButton(
+                                              icon: const Icon(Icons.close),
+                                              color: Colors.white,
+                                              onPressed: () {
+                                                final service = GetIt.I
+                                                    .get<AudioPlayerService>();
+
+                                                service.stop();
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            IconButton(
+                                                color: Colors.white,
+                                                onPressed: () {
+                                                  Dep.player.goPrevious();
+                                                },
+                                                icon: const Icon(
+                                                    Icons.skip_previous)),
+                                            StreamBuilder(
+                                              stream:
+                                                  Dep.player.playstateStream,
+                                              builder: (context, snapshot) {
+                                                final data = snapshot.data ??
+                                                    PlayerState(false,
+                                                        ProcessingState.idle);
+                                                if (data.processingState ==
+                                                    ProcessingState.completed) {
+                                                  return IconButton(
+                                                    icon: const Icon(
+                                                        Icons.replay),
+                                                    color: Colors.white,
+                                                    onPressed: () {
+                                                      Dep.player.replay();
+                                                    },
+                                                  );
+                                                }
+                                                return IconButton(
+                                                  icon: Icon(data.playing
+                                                      ? Icons.pause
+                                                      : Icons.play_arrow),
+                                                  color: Colors.white,
+                                                  onPressed: () {
+                                                    if (data.playing) {
+                                                      Dep.player.pause();
+                                                    } else {
+                                                      Dep.player.resume();
+                                                    }
+                                                  },
+                                                );
+                                              },
+                                            ),
+                                            IconButton(
+                                                color: Colors.white,
+                                                onPressed: () {
+                                                  Dep.player.goNext();
+                                                },
+                                                icon: const Icon(
+                                                    Icons.skip_next)),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -132,10 +232,10 @@ class MiniPlayerWrapper extends StatelessWidget {
                                   // );
                                 },
                                 error: (error, stackTrace) {
-                                  return SizedBox();
+                                  return const SizedBox();
                                 },
                                 loading: () {
-                                  return Center(
+                                  return const Center(
                                     child: CircularProgressIndicator(),
                                   );
                                 },
@@ -145,14 +245,14 @@ class MiniPlayerWrapper extends StatelessWidget {
                         ),
                       );
                     } else {
-                      return SizedBox();
+                      return const SizedBox();
                     }
                   },
                   error: (error, stackTrace) {
-                    return SizedBox();
+                    return const SizedBox();
                   },
                   loading: () {
-                    return SizedBox();
+                    return const SizedBox();
                   },
                 );
               },
@@ -160,6 +260,24 @@ class MiniPlayerWrapper extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTitle() {
+    return StreamBuilder(
+      stream: Dep.player.audioPlayer.sequenceStateStream,
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+
+        if (data == null) {
+          return const Text("Loading..");
+        }
+
+        return Text(
+          (data.currentSource?.tag as Topic?)?.name ?? "No name",
+          style: const TextStyle(color: Colors.white),
+        );
+      },
     );
   }
 }

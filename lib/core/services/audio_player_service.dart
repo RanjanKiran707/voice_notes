@@ -1,5 +1,7 @@
 import 'package:just_audio/just_audio.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:voice_notes/core/services/dependency_service.dart';
+import 'package:voice_notes/domain/database.dart';
 
 class AudioPlayerService {
   final audioPlayer = AudioPlayer();
@@ -11,6 +13,27 @@ class AudioPlayerService {
       final duration = await audioPlayer.setAudioSource(AudioSource.file(path));
       showMiniplayer.add(true);
       audioPlayer.play();
+
+      audioPlayer.setSpeed(Dep.prefService.getSpeed());
+      return duration ?? Duration.zero;
+    } catch (e) {
+      return Duration.zero;
+    }
+  }
+
+  Future<Duration> playList(List<Topic> topics, int currentIndex) async {
+    try {
+      final source = ConcatenatingAudioSource(
+          children: topics
+              .map((element) =>
+                  AudioSource.file(element.voiceLocalPath!, tag: element))
+              .toList());
+      final duration = await audioPlayer.setAudioSource(source,
+          initialIndex: currentIndex, initialPosition: Duration.zero);
+      showMiniplayer.add(true);
+      audioPlayer.play();
+
+      audioPlayer.setSpeed(Dep.prefService.getSpeed());
       return duration ?? Duration.zero;
     } catch (e) {
       return Duration.zero;
@@ -41,6 +64,14 @@ class AudioPlayerService {
   void replay() {
     audioPlayer.seek(Duration.zero);
     // audioPlayer.play();
+  }
+
+  void goNext() {
+    audioPlayer.seekToNext();
+  }
+
+  void goPrevious() {
+    audioPlayer.seekToPrevious();
   }
 
   Stream<PlayerState> get playstateStream => audioPlayer.playerStateStream;

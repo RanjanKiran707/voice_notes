@@ -3,4 +3,6 @@ class AppConstants {
 
   static const String atlas = "Atlas";
   static const String local = "Local";
+
+  static const String speed = "playbackSpeed";
 }

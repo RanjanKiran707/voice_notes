@@ -1,13 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:get_it/get_it.dart';
-import 'package:voice_notes/core/nav_utils.dart';
 import 'package:voice_notes/core/services/dependency_service.dart';
-import 'package:voice_notes/core/widgets/add_dialog.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar(
@@ -21,21 +13,54 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(title),
       actions: [
-        // IconButton(
-        //   onPressed: () {
-        //     FirebaseAuth.instance.signOut();
-        //     Dep.atlas.close();
-        //     Dep.local.close();
-        //   },
-        //   icon: Icon(Icons.logout),
-        // ),
+        IconButton(
+          onPressed: () {
+            final ctrl = TextEditingController();
+
+            final pref = Dep.prefService;
+
+            final curSpeed = pref.getSpeed();
+
+            ctrl.text = curSpeed.toString();
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text("Set playback speed"),
+                  content: TextField(
+                    keyboardType: TextInputType.number,
+                    controller: ctrl,
+                  ),
+                  actions: [
+                    FilledButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text("Cancel")),
+                    ElevatedButton(
+                        onPressed: () {
+                          final val = ctrl.text;
+
+                          final doubleVal = double.tryParse(val) ?? 1;
+
+                          pref.setSpeed(doubleVal);
+                          Navigator.pop(context);
+                        },
+                        child: const Text("Save")),
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.settings),
+        ),
         IconButton(
           onPressed: () {
             onAddPress();
           },
-          icon: Icon(Icons.add),
+          icon: const Icon(Icons.add),
         ),
-        SizedBox(
+        const SizedBox(
           width: 10,
         ),
       ],
@@ -44,5 +69,5 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   // TODO: implement preferredSize
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

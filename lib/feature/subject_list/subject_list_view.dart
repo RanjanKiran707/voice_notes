@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
@@ -11,10 +10,9 @@ import 'package:voice_notes/domain/database.dart';
 import 'package:voice_notes/feature/chapter_list/chapter_list_view.dart';
 import 'package:voice_notes/feature/subject_list/notifiers/inject_realm_notifier.dart';
 import 'package:voice_notes/feature/subject_list/notifiers/subjects_notifier.dart';
-import 'package:voice_notes/injection.dart';
 
 class SubjectListView extends ConsumerWidget {
-  SubjectListView({super.key});
+  const SubjectListView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,8 +34,7 @@ class SubjectListView extends ConsumerWidget {
                     hintText: "Enter subject name",
                     onSubmit: ({required name}) {
                       realm.write(() {
-                        realm.add<Subject>(
-                            Subject(ObjectId(), name, app.currentUser!.id));
+                        realm.add<Subject>(Subject(ObjectId(), name, ""));
                       });
                     },
                   );
@@ -69,10 +66,10 @@ class SubjectListView extends ConsumerWidget {
                   );
                 },
                 error: (error, stackTrace) {
-                  return Center();
+                  return const Center();
                 },
                 loading: () {
-                  return Center(
+                  return const Center(
                     child: CircularProgressIndicator(),
                   );
                 },
@@ -89,7 +86,7 @@ class SubjectListView extends ConsumerWidget {
         );
       },
       loading: () {
-        return Scaffold(
+        return const Scaffold(
           body: Center(
             child: CircularProgressIndicator(),
           ),

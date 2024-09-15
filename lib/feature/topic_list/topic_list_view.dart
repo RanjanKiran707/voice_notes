@@ -4,18 +4,16 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:realm/realm.dart';
 import 'package:voice_notes/core/services/audio_player_service.dart';
 import 'package:voice_notes/core/services/audio_recorder_service.dart';
-import 'package:voice_notes/core/services/dependency_service.dart';
 import 'package:voice_notes/core/services/logging_service.dart';
 import 'package:voice_notes/core/utils/constants.dart';
 import 'package:voice_notes/core/widgets/add_dialog.dart';
 import 'package:voice_notes/core/widgets/common_app_bar.dart';
 import 'package:voice_notes/core/widgets/confirm_dialog.dart';
 import 'package:voice_notes/domain/database.dart';
-import 'package:voice_notes/feature/chapter_list/notifiers/chapter_list_notifier.dart';
-import 'package:voice_notes/feature/subject_list/notifiers/subjects_notifier.dart';
 import 'package:voice_notes/feature/topic_list/notifiers/topic_list_notifier.dart';
 import 'package:voice_notes/feature/topic_list/widgets/record_bottom_sheet_helper.dart';
 
@@ -49,9 +47,9 @@ class TopicListView extends ConsumerWidget {
                       onPressed: () {
                         final service = GetIt.I.get<AudioPlayerService>();
 
-                        service.play(topicList[index].voiceLocalPath ?? "");
+                        service.playList(topicList, index);
                       },
-                      icon: Icon(Icons.play_arrow),
+                      icon: const Icon(Icons.play_arrow),
                     ),
                     leading: IconButton(
                       onPressed: () {
@@ -78,7 +76,7 @@ class TopicListView extends ConsumerWidget {
                           onDismiss: () {},
                         );
                       },
-                      icon: Icon(Icons.delete),
+                      icon: const Icon(Icons.delete),
                     ),
                   );
                 },
@@ -110,6 +108,9 @@ class TopicListView extends ConsumerWidget {
   }
 
   void _addNewTopic(BuildContext context) async {
+    if (!(await _micPermission())) {
+      return;
+    }
     final ans = await RecordBottomSheet.showRecordBottomsheet(context);
 
     if (ans != null) {
@@ -133,6 +134,19 @@ class TopicListView extends ConsumerWidget {
           );
         },
       );
+    }
+  }
+
+  Future<bool> _micPermission() async {
+    if (await Permission.microphone.isGranted) {
+      return true;
+    } else {
+      final result = await Permission.microphone.request();
+      if (result.isGranted) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 }
